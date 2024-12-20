@@ -45,7 +45,7 @@ dev-fmt = [
 
 # NOTE: This is "all" from the user and dev perspective
 all = [
-    "rgnardoc[dev-test, dev-fmt]"
+    "ragnardoc[dev-test, dev-fmt]"
 ]
 
 [tool.setuptools.packages.find]
