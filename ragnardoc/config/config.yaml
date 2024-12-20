@@ -1,0 +1,28 @@
+# Common logging config
+log_level: info
+log_filters: ""
+log_json: false
+log_thread_id: false
+
+# Where the user-owned content should live
+ragnardoc_home: ~/.ragnardoc
+
+# Document scraping config
+scraping:
+  # Which docs to include in the scrape
+  include:
+    paths: []
+    globs: []
+    regexprs: []
+  # Which docs to exclude in the scrape
+  exclude:
+    paths: []
+    globs: []
+    regexprs: []
+
+# Document ingestion config
+ingestion:
+  # Factory list of ingestion plugins to ingest to
+  plugins:
+    - type: anythingllm
+      config: {}
