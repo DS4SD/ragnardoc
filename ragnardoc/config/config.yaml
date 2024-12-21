@@ -9,15 +9,22 @@ ragnardoc_home: ~/.ragnardoc
 
 # Document scraping config
 scraping:
+  # Root directories for scraping
+  roots:
+    - ~/Documents
+  # File extensions indicating raw text
+  raw_text_extensions:
+    - md
+    - txt
+    - json
+    - yaml
   # Which docs to include in the scrape
   include:
     paths: []
-    globs: []
     regexprs: []
   # Which docs to exclude in the scrape
   exclude:
     paths: []
-    globs: []
     regexprs: []
 
 # Document ingestion config
