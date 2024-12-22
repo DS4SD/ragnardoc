@@ -40,6 +40,7 @@ def main():
         thread_id=args.log_thread_id,
     )
     log.info("RAGNARDoc is starting up in [%s] mode", args.mode)
+    log.debug4("Full config: %s", config.config_instance)
 
     # Construct the core instance
     instance = RagnardocCore(config)
