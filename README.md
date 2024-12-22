@@ -4,15 +4,39 @@ RAGNARDoc (RAG Native Automatic Reingest Docs) is a tool that runs natively on a
 
 ![ragnardoc duck](./ragnardoc.png)
 
+## Installation
+
+```sh
+pip install git+https://github.ibm.com/ghart/ragnardoc
+# Validate that the install works!
+ragnardoc --help
+```
+
 ## Configuration
 
 The configuration for RAGNARDoc is managed by a yaml file. The default location is `$HOME/.ragnardoc/config.yaml`, but can be overloaded with the `RAGNARDOC_HOME` environment variable. All default values can be found in [config.yaml](./ragnardoc/config/config.yaml) in the codebase.
 
-## Ingestion Plugins
+### Configuring
+
+To initialize your RAGNARDoc config, do the following:
+
+```sh
+mkdir -p ~/.ragnardoc
+echo "scraping:
+  roots:
+    # Fill in with the list of directories to ingest
+    - ~/Desktop
+    - ~/Documents
+" > ~/.ragnardoc/config.yaml
+```
+
+Once done, you can add entries to your `config.yaml` to add supported ingestion plugins (see below).
+
+### Ingestion Plugins
 
 RAGNARDoc operates with a plugin model for connecting to applications to ingest docs. Each plugin is responsible for connecting to a given app. RAGNARDoc's native ingestion capabilities are:
 
-### AnythingLLM Desktop
+#### AnythingLLM Desktop
 
 To configure a connection to [AnythingLLM](https://anythingllm.com/), follow these steps:
 
@@ -32,8 +56,10 @@ To configure a connection to [AnythingLLM](https://anythingllm.com/), follow the
             apikey: <YOUR API KEY>
     ```
 
-## Future Ideas
+## TODO
 
 * Auto-configure by inspecting common tools
 * Per-ingestor inclusion / exclusion
 * Abstract scrapers to allow non-local scraping
+* CLI configuration (add docs, patterns, excludes, etc)
+* Service mode!
