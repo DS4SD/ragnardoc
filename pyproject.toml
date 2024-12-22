@@ -18,8 +18,8 @@ dependencies = [
     "requests>=2.32.3,<3",
 ]
 
-# TODO
-# [project.scripts]
+[project.scripts]
+ragnardoc = "ragnardoc.__main__:main"
 
 [project.optional-dependencies]
 
