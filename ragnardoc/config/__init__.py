@@ -21,14 +21,14 @@ def _initialize_config() -> aconfig.ImmutableConfig:
     # Merge in user overrides
     user_config = os.path.join(os.path.expanduser(config.ragnardoc_home), "config.yaml")
     if os.path.exists(user_config):
-        config = merge_configs(config, user_config)
+        config = merge_configs(config, aconfig.Config.from_yaml(user_config))
 
     # Return the immutable view
     return aconfig.ImmutableConfig(config)
 
 # Global config object
-_config = _initialize_config()
+config_instance = _initialize_config()
 
 # Attribute access
 def __getattr__(key: str) -> any:
-    return getattr(_config, key)
+    return getattr(config_instance, key)
