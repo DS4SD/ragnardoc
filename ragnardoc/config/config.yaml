@@ -13,8 +13,7 @@ ragnardoc_home: ~/.ragnardoc
 # Document scraping config
 scraping:
   # Root directories for scraping
-  roots:
-    - ~/Documents
+  roots: []
   # File extensions indicating raw text
   raw_text_extensions:
     - md
@@ -33,6 +32,4 @@ scraping:
 # Document ingestion config
 ingestion:
   # Factory list of ingestion plugins to ingest to
-  plugins:
-    - type: anythingllm
-      config: {}
+  plugins: []
