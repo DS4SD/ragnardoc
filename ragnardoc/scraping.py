@@ -73,7 +73,8 @@ class FileScraper:
             if self._is_raw_text_type(fname):
                 output_docs.append(Document.from_file(fname))
             else:
-                output_docs.append(self._convert_doc(fname))
+                if (converted := self._convert_doc(fname)) is not None:
+                    output_docs.append(converted)
         return output_docs
 
     ## Impl ##
