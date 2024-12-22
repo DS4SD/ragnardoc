@@ -4,6 +4,9 @@ log_filters: ""
 log_json: false
 log_thread_id: false
 
+# Mode of operation
+mode: cli
+
 # Where the user-owned content should live
 ragnardoc_home: ~/.ragnardoc
 
