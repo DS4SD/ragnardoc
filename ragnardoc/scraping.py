@@ -67,14 +67,11 @@ class FileScraper:
                         files_to_ingest.append(full_path)
         log.debug4("All docs to ingest: %s", files_to_ingest)
 
-        # Construct the docs
+        # Construct the docs (with lazy loading)
         output_docs = []
         for fname in files_to_ingest:
-            if self._is_raw_text_type(fname):
-                output_docs.append(Document.from_file(fname))
-            else:
-                if (converted := self._convert_doc(fname)) is not None:
-                    output_docs.append(converted)
+            converter = None if self._is_raw_text_type(fname) else self._convert_doc
+            output_docs.append(Document.from_file(path=fname, converter=converter))
         return output_docs
 
     ## Impl ##
