@@ -46,10 +46,11 @@ class AnythingLLMIngestor(Ingestor):
     def ingest(self, documents: list[Document]):
         """Ingest the document with a name matching the"""
         for doc in documents:
-            if doc.content is None:
-                with open(doc.path, encoding="utf-8") as handle:
-                    doc.content = handle.read()
-            doc_content = doc.content
+            try:
+                doc_content = doc.content
+            except Exception as err:
+                log.debug("Unable to parse document %s: %s", doc.path, err, exc_info=True)
+                continue
 
             # TODO:
             #   - Ingestion logging
@@ -67,7 +68,7 @@ class AnythingLLMIngestor(Ingestor):
                 headers=self._headers(),
             )
             log.debug("Upload response code: %d", resp.status_code)
-            log.debug2(resp.json())
+            log.debug2(resp.text)
 
     def delete(self, documents: list[Document]):
         """Currently, there is no good way to delete docs!"""

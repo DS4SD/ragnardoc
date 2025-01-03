@@ -88,11 +88,5 @@ class FileScraper:
         return os.path.splitext(candidate)[1].lower() in self.raw_text_extensions
 
     def _convert_doc(self, fname: str) -> Document | None:
-        try:
-            converted = self.converter.convert(fname)
-            return Document(
-                path=fname, content=converted.document.export_to_markdown()
-            )
-        except Exception as err:
-            log.debug("Error converting document %s: %s", fname, err, exc_info=True)
-            return None
+        converted = self.converter.convert(fname)
+        return converted.document.export_to_markdown()
