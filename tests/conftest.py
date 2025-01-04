@@ -3,6 +3,7 @@ Shared test setup and fixtures
 """
 # Standard
 from pathlib import Path
+import tempfile
 
 # Third Party
 import pytest
@@ -16,3 +17,9 @@ def data_dir():
 @pytest.fixture
 def txt_data_file(data_dir):
     return data_dir / "sample.txt"
+
+
+@pytest.fixture
+def scratch_dir():
+    with tempfile.TemporaryDirectory() as dirname:
+        yield dirname
