@@ -63,7 +63,7 @@ def test_fingerprint_content_change(scratch_dir):
     """Test that the doc's fingerprint is computed correctly and mirrors changes
     to the document itself
     """
-    doc_path = Path(scratch_dir) / "doc.txt"
+    doc_path = scratch_dir / "doc.txt"
     content1 = "Hello World"
     content2 = "Hiya world!"
     with open(doc_path, "w") as handle:
