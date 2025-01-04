@@ -47,19 +47,19 @@ To configure a connection to [AnythingLLM](https://anythingllm.com/), follow the
 5. Create a new API Key
 6. Add the plugin to your config (default location `$HOME/.ragnardoc/config.yaml`)
 
-    ```yaml
-    ingestion:
-      plugins:
-        - type: anything-llm
-          config:
-            base_url: http://localhost:3001
-            apikey: <YOUR API KEY>
-    ```
+   ```yaml
+   ingestion:
+     plugins:
+       - type: anything-llm
+         config:
+           base_url: http://localhost:3001
+           apikey: <YOUR API KEY>
+   ```
 
 ## TODO
 
-* Auto-configure by inspecting common tools
-* Per-ingestor inclusion / exclusion
-* Abstract scrapers to allow non-local scraping
-* CLI configuration (add docs, patterns, excludes, etc)
-* Service mode!
+- Auto-configure by inspecting common tools
+- Per-ingestor inclusion / exclusion
+- Abstract scrapers to allow non-local scraping
+- CLI configuration (add docs, patterns, excludes, etc)
+- Service mode!
