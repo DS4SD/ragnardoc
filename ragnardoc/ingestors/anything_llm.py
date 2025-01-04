@@ -55,6 +55,14 @@ class AnythingLLMIngestor(Ingestor):
     def ingest(self, documents: list[Document]):
         """Ingest the document with a name matching the"""
         for doc in documents:
+
+            # Check to see if this doc has changed since last ingesting
+            fingerprint = doc.fingerprint()
+            if self._storage.get(doc.path) == fingerprint:
+                log.debug("Document [%s] has not changed. Not uploading", doc.path)
+                continue
+
+            # Ensure the latest content is current
             try:
                 doc_content = doc.content
             except Exception as err:
@@ -80,6 +88,7 @@ class AnythingLLMIngestor(Ingestor):
             )
             log.debug("Upload response code: %d", resp.status_code)
             log.debug2(resp.text)
+            self._storage.set(doc.path, fingerprint)
 
     def delete(self, documents: list[Document]):
         """Currently, there is no good way to delete docs!"""
