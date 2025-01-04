@@ -1,11 +1,14 @@
 """
 Unit tests for dict-based storage
 """
+# Standard
+from unittest import mock
 
 # Third Party
 import pytest
 
 # Local
+from ragnardoc import config
 from ragnardoc.storage import storage_factory
 from ragnardoc.storage.sqlite_storage import SqliteStorage
 
@@ -69,3 +72,12 @@ def test_invalid_type(scratch_dir):
     ns = inst.namespace("test")
     with pytest.raises(TypeError):
         ns.set("key", b"bytes")
+
+
+def test_ragnardoc_home_db(scratch_dir):
+    """Test that non-absolute paths will be prepended by ragnardoc_home"""
+    with mock.patch.object(config, "ragnardoc_home", scratch_dir):
+        inst = storage_factory.construct(
+            {"type": "sqlite", "config": {"db_path": "some_storage.db"}}
+        )
+        assert inst._db_path == str(scratch_dir / "some_storage.db")

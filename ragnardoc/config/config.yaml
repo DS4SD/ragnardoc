@@ -36,4 +36,7 @@ ingestion:
 
 # State storage
 storage:
-  type: dict
+  type: sqlite
+  config:
+    # Any non-absolute path will be prepended with ragnardoc_home
+    db_path: storage.db

@@ -12,6 +12,7 @@ import aconfig
 import alog
 
 # Local
+from .. import config as base_config
 from .base import StorageBase
 
 log = alog.use_channel("SQLLSTOR")
@@ -23,7 +24,13 @@ class SqliteStorage(StorageBase):
     name = "sqlite"
 
     def __init__(self, config: aconfig.Config, *_, **__) -> None:
-        self._db_path = config.db_path
+        db_path = config.db_path
+        if not os.path.isabs(db_path):
+            db_path = os.path.join(
+                os.path.expanduser(base_config.ragnardoc_home), db_path
+            )
+        self._db_path = os.path.abspath(db_path)
+        log.debug("DB Path: %s", self._db_path)
         os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
         self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
 
