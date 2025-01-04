@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-
 # Type definition of a conversion function that takes the path to a file and
 # provides the converted raw text
 Converter = Callable[[str], str]

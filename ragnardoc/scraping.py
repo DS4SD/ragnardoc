@@ -19,17 +19,13 @@ log = alog.use_channel("SCRAPING")
 
 
 class FileScraper:
-
     def __init__(self, config: aconfig.Config):
         # Load the docling converter
         with alog.ContextTimer(log.debug, "Loaded doc converter in: "):
             self.converter = DocumentConverter()
 
         # Figure out the paths to scrape from
-        self.roots = [
-            os.path.expanduser(root)
-            for root in config.roots
-        ]
+        self.roots = [os.path.expanduser(root) for root in config.roots]
 
         # Save the configured set of raw text types that don't need conversion
         self.raw_text_extensions = config.raw_text_extensions
@@ -37,14 +33,10 @@ class FileScraper:
         # Store the include/exclude patterns
         self.include_paths = config.include.paths
         self.include_regexprs = [
-            re.compile(expr)
-            for expr in config.include.regexprs or [".*"]
+            re.compile(expr) for expr in config.include.regexprs or [".*"]
         ]
         self.exclude_paths = config.exclude.paths
-        self.exclude_regexprs = [
-            re.compile(expr)
-            for expr in config.exclude.regexprs
-        ]
+        self.exclude_regexprs = [re.compile(expr) for expr in config.exclude.regexprs]
 
     def scrape(self) -> list[Document]:
         """Scrape the given path"""
@@ -56,13 +48,11 @@ class FileScraper:
                 for fname in files:
                     full_path = os.path.join(parent, fname)
                     if (
-                        (
-                            self._match_paths(full_path, self.include_paths) or
-                            self._match_regexprs(full_path, self.include_regexprs)
-                        ) and not (
-                            self._match_paths(full_path, self.exclude_paths) or
-                            self._match_regexprs(full_path, self.exclude_regexprs)
-                        )
+                        self._match_paths(full_path, self.include_paths)
+                        or self._match_regexprs(full_path, self.include_regexprs)
+                    ) and not (
+                        self._match_paths(full_path, self.exclude_paths)
+                        or self._match_regexprs(full_path, self.exclude_regexprs)
                     ):
                         files_to_ingest.append(full_path)
         log.debug4("All docs to ingest: %s", files_to_ingest)

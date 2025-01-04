@@ -11,8 +11,8 @@ from . import config as default_config
 from .ingestors import ingestor_factory
 from .scraping import FileScraper
 
-
 log = alog.use_channel("RAGNARDOC")
+
 
 class RagnardocCore:
     """This is the core class object that maintains the config, scrapers, and
@@ -27,10 +27,12 @@ class RagnardocCore:
 
         # Construct the ingestors
         self.ingestors = [
-            ingestor_factory.construct(cfg)
-            for cfg in self.config.ingestion.plugins
+            ingestor_factory.construct(cfg) for cfg in self.config.ingestion.plugins
         ]
-        log.info("All configured ingestion plugins: %s", [entry.name for entry in self.ingestors])
+        log.info(
+            "All configured ingestion plugins: %s",
+            [entry.name for entry in self.ingestors],
+        )
 
     def ingest(self):
         """Run a single ingestion cycle"""

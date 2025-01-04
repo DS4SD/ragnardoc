@@ -16,20 +16,45 @@ import alog
 from . import config
 from .core import RagnardocCore
 
-
 log = alog.use_channel("MAIN")
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
 
     # Logging
-    parser.add_argument("--log-level", "-l", default=config.log_level, help="Default log channel level")
-    parser.add_argument("--log-filters", "-lf", default=config.log_filters, help="Per-channel log filters")
-    parser.add_argument("--log-json", "-lj", action="store_true", default=config.log_json, help="Log output as JSON")
-    parser.add_argument("--log-thread-id", "-lt", action="store_true", default=config.log_thread_id, help="Include the thread ID in log header")
+    parser.add_argument(
+        "--log-level", "-l", default=config.log_level, help="Default log channel level"
+    )
+    parser.add_argument(
+        "--log-filters",
+        "-lf",
+        default=config.log_filters,
+        help="Per-channel log filters",
+    )
+    parser.add_argument(
+        "--log-json",
+        "-lj",
+        action="store_true",
+        default=config.log_json,
+        help="Log output as JSON",
+    )
+    parser.add_argument(
+        "--log-thread-id",
+        "-lt",
+        action="store_true",
+        default=config.log_thread_id,
+        help="Include the thread ID in log header",
+    )
 
     # Operation mode
-    parser.add_argument("--mode", "-m", default=config.mode, choices=["cli", "service"], help="Mode of operation for the tool")
+    parser.add_argument(
+        "--mode",
+        "-m",
+        default=config.mode,
+        choices=["cli", "service"],
+        help="Mode of operation for the tool",
+    )
 
     # Parse and configure logging
     args = parser.parse_args()
@@ -50,9 +75,12 @@ def main():
         with alog.ContextTimer(log.info, "Finished CLI ingestion in: "):
             instance.ingest()
     elif args.mode == "service":
-        raise NotImplementedError("Service mode is not currently supported. Coming soon!")
+        raise NotImplementedError(
+            "Service mode is not currently supported. Coming soon!"
+        )
     else:
         raise RuntimeError(f"Unknown mode: {args.mode}")
+
 
 if __name__ == "__main__":
     main()

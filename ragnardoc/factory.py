@@ -13,7 +13,6 @@ import importlib
 import aconfig
 import alog
 
-
 log = alog.use_channel("FCTRY")
 
 
@@ -62,7 +61,9 @@ class Factory:
     def register(self, constructible: type[FactoryConstructible]):
         """Register the given constructible"""
         current = self._registered_types.get(constructible.name)
-        assert current is None or current is constructible, f"Conflicting registration of {constructible.name}"
+        assert (
+            current is None or current is constructible
+        ), f"Conflicting registration of {constructible.name}"
         self._registered_types[constructible.name] = constructible
 
     def construct(
@@ -77,7 +78,9 @@ class Factory:
             override_env_vars=False,
         )
         inst_cls = self._registered_types.get(inst_type)
-        assert inst_cls is not None, f"No {self.name} class registered for type {inst_type}"
+        assert (
+            inst_cls is not None
+        ), f"No {self.name} class registered for type {inst_type}"
         instance_name = instance_name or inst_cls.name
         return inst_cls(inst_cfg, instance_name)
 

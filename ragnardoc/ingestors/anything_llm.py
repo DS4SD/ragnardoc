@@ -27,6 +27,7 @@ from .base import Ingestor
 
 log = alog.use_channel("ANYTHINGLLM")
 
+
 class AnythingLLMIngestor(Ingestor):
     __doc__ = __doc__
 
@@ -49,7 +50,9 @@ class AnythingLLMIngestor(Ingestor):
             try:
                 doc_content = doc.content
             except Exception as err:
-                log.debug("Unable to parse document %s: %s", doc.path, err, exc_info=True)
+                log.debug(
+                    "Unable to parse document %s: %s", doc.path, err, exc_info=True
+                )
                 continue
 
             # TODO:
@@ -63,7 +66,7 @@ class AnythingLLMIngestor(Ingestor):
                     "textContent": doc_content,
                     "metadata": {
                         "title": title,
-                    }
+                    },
                 },
                 headers=self._headers(),
             )

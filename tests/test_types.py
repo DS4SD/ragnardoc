@@ -40,6 +40,7 @@ def test_document_lazy_loading_no_conversion(txt_data_file):
 def test_document_lazy_loading_with_conversion(txt_data_file):
     """Test that the document's content is lazily loaded with conversion"""
     expected = "conveted!"
+
     def dummy_converter(ignored):
         return expected
 

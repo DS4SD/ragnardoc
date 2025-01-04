@@ -10,7 +10,6 @@ import aconfig
 # Local
 from .merge import merge_configs
 
-
 BASE_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.yaml")
 
 
@@ -25,6 +24,7 @@ def _initialize_config() -> aconfig.ImmutableConfig:
 
     # Return the immutable view
     return aconfig.ImmutableConfig(config)
+
 
 # Global config object
 config_instance = _initialize_config()

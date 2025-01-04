@@ -9,7 +9,6 @@ from enum import Enum
 # First Party
 import aconfig
 
-
 _CONFIG_TYPE = dict | aconfig.Config
 
 
