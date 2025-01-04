@@ -33,3 +33,7 @@ scraping:
 ingestion:
   # Factory list of ingestion plugins to ingest to
   plugins: []
+
+# State storage
+storage:
+  type: dict
