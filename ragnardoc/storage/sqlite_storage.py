@@ -34,6 +34,9 @@ class SqliteStorage(StorageBase):
         os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
         self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
 
+    def __del__(self):
+        self._conn.close()
+
     class StorageSqliteNamespace(StorageBase.StorageNamespaceBase):
         """Implementation of the storage namespace using sqlite3"""
 
@@ -49,15 +52,16 @@ class SqliteStorage(StorageBase):
                 cursor = conn.cursor()
                 self._execute(
                     cursor,
-                    f"INSERT OR REPLACE INTO {self.name} VALUES (?, ?, ?)",
+                    f"INSERT OR REPLACE INTO '{self.name}' VALUES (?, ?, ?)",
                     (key, str(value), type_name),
                 )
+            self._conn.commit()
 
         def get(self, key: str) -> "StorageBase.VALUE_TYPE":
             with self._conn as conn:
                 cursor = conn.cursor()
                 self._execute(
-                    cursor, f"SELECT * FROM {self.name} WHERE key = '{key}' LIMIT 1"
+                    cursor, f"SELECT * FROM '{self.name}' WHERE key = '{key}' LIMIT 1"
                 )
                 result = cursor.fetchone()
                 if not result:
@@ -73,7 +77,8 @@ class SqliteStorage(StorageBase):
             current_val = self.get(key)
             with self._conn as conn:
                 cursor = conn.cursor()
-                self._execute(cursor, f"DELETE FROM {self.name} WHERE key=?", (key,))
+                self._execute(cursor, f"DELETE FROM '{self.name}' WHERE key=?", (key,))
+            self._conn.commit()
             return current_val
 
         @staticmethod
@@ -95,7 +100,7 @@ class SqliteStorage(StorageBase):
             cursor = conn.cursor()
             ns._execute(
                 cursor,
-                f"""CREATE TABLE IF NOT EXISTS {name} (
+                f"""CREATE TABLE IF NOT EXISTS '{name}' (
                 key TEXT PRIMARY KEY,
                 value TEXT,
                 value_type TEXT
