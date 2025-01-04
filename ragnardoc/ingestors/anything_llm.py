@@ -22,6 +22,7 @@ import aconfig
 import alog
 
 # Local
+from ..storage import StorageBase
 from ..types import Document
 from .base import Ingestor
 
@@ -35,9 +36,16 @@ class AnythingLLMIngestor(Ingestor):
 
     _time_format = "%Y-%m-%d-%H-%M-%S"
 
-    def __init__(self, config: aconfig.Config, *_, **__):
+    def __init__(
+        self,
+        config: aconfig.Config,
+        instance_name: str,
+        *,
+        storage: StorageBase,
+    ):
         self.upload_url = f"{config.base_url}/api/v1/document/raw-text"
         self.apikey = config.apikey
+        self._storage = storage.namespace(self.name + instance_name)
 
     def _headers(self) -> dict:
         return {

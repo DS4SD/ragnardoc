@@ -10,6 +10,7 @@ import alog
 from . import config as default_config
 from .ingestors import ingestor_factory
 from .scraping import FileScraper
+from .storage import storage_factory
 
 log = alog.use_channel("RAGNARDOC")
 
@@ -25,9 +26,13 @@ class RagnardocCore:
         # Construct the scraper
         self.scraper = FileScraper(self.config.scraping)
 
+        # Construct the storage
+        self.storage = storage_factory.construct(self.config.storage)
+
         # Construct the ingestors
         self.ingestors = [
-            ingestor_factory.construct(cfg) for cfg in self.config.ingestion.plugins
+            ingestor_factory.construct(cfg, storage=self.storage)
+            for cfg in self.config.ingestion.plugins
         ]
         log.info(
             "All configured ingestion plugins: %s",
