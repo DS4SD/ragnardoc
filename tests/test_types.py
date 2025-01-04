@@ -7,7 +7,6 @@ import pytest
 
 # Local
 from ragnardoc import types
-from tests.conftest import txt_data_file
 
 
 def test_document_from_file(txt_data_file):
@@ -18,6 +17,14 @@ def test_document_from_file(txt_data_file):
     assert doc.converter is None
     assert doc.metadata == {"foo": 1}
     assert doc._content is None
+
+
+def test_document_from_file_proactive(txt_data_file):
+    """Test that a document can be loaded from a file directly and proactively
+    loaded
+    """
+    doc = types.Document.from_file(txt_data_file, load=True)
+    assert doc._content is not None
 
 
 def test_document_lazy_loading_no_conversion(txt_data_file):
@@ -42,14 +49,11 @@ def test_document_lazy_loading_with_conversion(txt_data_file):
     assert doc._content == expected
 
 
-# def test_document_loading():
-#     doc = types.Document(
-#         path="some/path", converter=lambda _: "Converted!", title="title", metadata={"key": 1}
-#     )
-
-#     assert doc._content is None
-#     doc.load()
-
-#     with open("some/path") as f:
-#         expected = f.read()
-#     assert doc.content == expected
+def test_set_content():
+    """Test that the content property can be set directly"""
+    doc = types.Document("some/bad/path")
+    assert doc._content is None
+    content = "Hello there!"
+    doc.content = content
+    assert doc.content == content
+    assert doc._content == content
