@@ -2,6 +2,7 @@
 Module for scraping files to ingest
 """
 # Standard
+import json
 import os
 import re
 
@@ -13,13 +14,17 @@ import aconfig
 import alog
 
 # Local
-from .types import Document
+from .storage import StorageBase
+from .types import Document, ScrapeResult
 
 log = alog.use_channel("SCRAPING")
 
 
 class FileScraper:
-    def __init__(self, config: aconfig.Config):
+
+    _scrape_cache_key = "scrape_cache"
+
+    def __init__(self, storage: StorageBase, config: aconfig.Config):
         # Load the docling converter
         with alog.ContextTimer(log.debug, "Loaded doc converter in: "):
             self.converter = DocumentConverter()
@@ -38,7 +43,10 @@ class FileScraper:
         self.exclude_paths = config.exclude.paths
         self.exclude_regexprs = [re.compile(expr) for expr in config.exclude.regexprs]
 
-    def scrape(self) -> list[Document]:
+        # Scoped storage for detecting deletions
+        self._storage = storage.namespace("__core_scraping__")
+
+    def scrape(self) -> ScrapeResult:
         """Scrape the given path"""
         files_to_ingest = {}
         for root in self.roots:
@@ -69,7 +77,23 @@ class FileScraper:
                 output_docs.append(
                     Document.from_file(path=fname, root=root, converter=converter)
                 )
-        return output_docs
+
+        # Detect deleted docs
+        this_scrape_data = {doc.path: doc.root for doc in output_docs}
+        deleted_docs = []
+        if last_scrape_data := self._storage.get(self._scrape_cache_key):
+            last_scrape = json.loads(last_scrape_data)
+            deleted_docs = [
+                Document(path=doc_path, root=doc_root)
+                for doc_path, doc_root in last_scrape.items()
+                if doc_path not in this_scrape_data
+            ]
+
+        # Add this scrape to the last scrape cache
+        self._storage.set(self._scrape_cache_key, json.dumps(this_scrape_data))
+
+        # Return the full result of the scrape
+        return ScrapeResult(documents=output_docs, removed=deleted_docs)
 
     ## Impl ##
 

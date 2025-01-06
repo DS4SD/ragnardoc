@@ -116,3 +116,13 @@ class Document:
             else:
                 with open(self.path, encoding="utf-8") as handle:
                     self._content = handle.read()
+
+
+@dataclass
+class ScrapeResult:
+    """The result of a single scrape is a set of documents that exist and a set
+    that have been removed
+    """
+
+    documents: list[Document]
+    removed: list[Document]
