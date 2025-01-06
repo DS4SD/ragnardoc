@@ -31,7 +31,7 @@ class FactoryConstructible(abc.ABC):
         """
 
     @abc.abstractmethod
-    def __init__(self, config: aconfig.Config, instance_name: str):
+    def __init__(self, config: aconfig.Config, instance_name: str, **kwargs):
         """A FactoryConstructible object must be constructed with a config
         object that it uses to pull in all configuration
         """
@@ -70,6 +70,7 @@ class Factory:
         self,
         instance_config: dict,
         instance_name: str | None = None,
+        **kwargs,
     ) -> FactoryConstructible:
         """Construct an instance of the given type"""
         inst_type = instance_config.get(self.__class__.TYPE_KEY)
@@ -82,7 +83,7 @@ class Factory:
             inst_cls is not None
         ), f"No {self.name} class registered for type {inst_type}"
         instance_name = instance_name or inst_cls.name
-        return inst_cls(inst_cfg, instance_name)
+        return inst_cls(inst_cfg, instance_name, **kwargs)
 
 
 class ImportableFactory(Factory):
@@ -97,6 +98,7 @@ class ImportableFactory(Factory):
         self,
         instance_config: dict,
         instance_name: str | None = None,
+        **kwargs,
     ):
         # Look for an import_class and import and register it if found
         import_class_val = instance_config.get(self.__class__.IMPORT_CLASS_KEY)
@@ -108,4 +110,4 @@ class ImportableFactory(Factory):
             assert issubclass(imported_class, FactoryConstructible)
 
             self.register(imported_class)
-        return super().construct(instance_config, instance_name)
+        return super().construct(instance_config, instance_name, **kwargs)

@@ -22,6 +22,7 @@ import aconfig
 import alog
 
 # Local
+from ..storage import StorageBase
 from ..types import Document
 from .base import Ingestor
 
@@ -35,9 +36,16 @@ class AnythingLLMIngestor(Ingestor):
 
     _time_format = "%Y-%m-%d-%H-%M-%S"
 
-    def __init__(self, config: aconfig.Config, *_, **__):
+    def __init__(
+        self,
+        config: aconfig.Config,
+        instance_name: str,
+        *,
+        storage: StorageBase,
+    ):
         self.upload_url = f"{config.base_url}/api/v1/document/raw-text"
         self.apikey = config.apikey
+        self._storage = storage.namespace(self.name + instance_name)
 
     def _headers(self) -> dict:
         return {
@@ -47,6 +55,14 @@ class AnythingLLMIngestor(Ingestor):
     def ingest(self, documents: list[Document]):
         """Ingest the document with a name matching the"""
         for doc in documents:
+
+            # Check to see if this doc has changed since last ingesting
+            fingerprint = doc.fingerprint()
+            if self._storage.get(doc.path) == fingerprint:
+                log.debug("Document [%s] has not changed. Not uploading", doc.path)
+                continue
+
+            # Ensure the latest content is current
             try:
                 doc_content = doc.content
             except Exception as err:
@@ -72,6 +88,7 @@ class AnythingLLMIngestor(Ingestor):
             )
             log.debug("Upload response code: %d", resp.status_code)
             log.debug2(resp.text)
+            self._storage.set(doc.path, fingerprint)
 
     def delete(self, documents: list[Document]):
         """Currently, there is no good way to delete docs!"""
