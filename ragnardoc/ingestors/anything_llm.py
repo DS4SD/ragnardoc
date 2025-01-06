@@ -70,26 +70,33 @@ class AnythingLLMIngestor(Ingestor):
         storage: StorageBase,
     ):
         # All the API URLs we'll use for easy reference
-        self.base_url = config.base_url
-        self.upload_url = f"{config.base_url}/api/v1/document/raw-text"
-        self.move_url = f"{self.base_url}/api/v1/document/move-files"
-        self.create_folder_url = f"{self.base_url}/api/v1/document/create-folder"
-        self.workspaces_url = f"{self.base_url}/api/v1/workspaces"
-        self.workspace_details_url = f"{self.base_url}/api/v1/workspace"
+        self._base_url = config.base_url
+        api_base = f"{self._base_url}/api/v1"
+        self._upload_url = f"{api_base}/document/raw-text"
+        self._move_url = f"{api_base}/document/move-files"
+        self._create_folder_url = f"{api_base}/document/create-folder"
+        self._workspaces_url = f"{api_base}/workspaces"
+        self._workspace_details_url = f"{api_base}/workspace"
+        self._doc_delete_url = f"{api_base}/system/remove-documents"
 
-        self.apikey = config.apikey
-        self.root_folder = config.root_folder
+        self._root_folder = config.root_folder
+
+        self._headers = {
+            "Authorization": f"Bearer {config.apikey}",
+        }
+
+        # Scoped storage for re-ingestion fingerprint cache
         self._storage = storage.namespace(self.name + instance_name)
 
         # Get the workspace slugs for all configured workspaces
-        self.workspace_slugs = {
+        self._workspace_slugs = {
             ws["name"]: ws["slug"]
             for ws in self._get_workspaces()
             if ws["name"] in config.workspaces
         }
-        log.debug("Workspace slugs: %s", self.workspace_slugs)
+        log.debug("Workspace slugs: %s", self._workspace_slugs)
         missing_workspaces = [
-            ws for ws in config.workspaces if ws not in self.workspace_slugs
+            ws for ws in config.workspaces if ws not in self._workspace_slugs
         ]
         if missing_workspaces:
             log.warning("Workspace(s) not found: %s", missing_workspaces)
@@ -101,7 +108,7 @@ class AnythingLLMIngestor(Ingestor):
     def ingest(self, documents: list[Document]):
         """Ingest the document with a name matching the"""
         # Ensure the base ragnardoc folder exists
-        self._ensure_directory_path(self.root_folder)
+        self._ensure_directory_path(self._root_folder)
 
         uploaded_docs = []
         for doc in documents:
@@ -120,19 +127,12 @@ class AnythingLLMIngestor(Ingestor):
                 log.debug4(err, exc_info=True)
                 continue
 
-            # Create the title. Anything LLM does not support nested directories
-            # so we need to flatten the path with '--' characters
-            raw_title = os.path.relpath(
-                doc.path, os.path.dirname(os.path.abspath(doc.root))
-            )
-            title = raw_title.replace(os.sep, "--")
-            log.debug2("Title for %s: %s", doc.path, title)
-
             # Do the raw ingestion into custom-documents
+            title = self._get_doc_title(doc)
             log.info("Ingesting document: %s", title)
             resp = requests.post(
-                self.upload_url,
-                headers=self._headers(),
+                self._upload_url,
+                headers=self._headers,
                 json={
                     "textContent": doc_content,
                     "metadata": {
@@ -167,10 +167,10 @@ class AnythingLLMIngestor(Ingestor):
             except IndexError:
                 log.warning("No location found in first document!")
                 continue
-            target_location = os.path.join(self.root_folder, f"{title}.json")
+            target_location = self._get_doc_location(doc)
             move_resp = requests.post(
-                self.move_url,
-                headers=self._headers(),
+                self._move_url,
+                headers=self._headers,
                 json={"files": [{"from": upload_location, "to": target_location}]},
             )
             if move_resp.status_code != 200:
@@ -183,30 +183,72 @@ class AnythingLLMIngestor(Ingestor):
             uploaded_docs.append(target_location)
 
         # Update the workspaces with the uploaded docs
-        for workspace_name, workspace_slug in self.workspace_slugs.items():
+        for workspace_name, workspace_slug in self._workspace_slugs.items():
             log.debug2("Updating docs in workspace %s", workspace_name)
             self._update_docs_in_workspace(uploaded_docs, workspace_slug)
 
     def delete(self, documents: list[Document]):
         """Currently, there is no good way to delete docs!"""
-        log.warning("Unable to delete documents from AnythingLLM!")
-        # TODO: It may be possible to physically delete them form the special
-        #   cache dir used by the server
+        # Remove all documents from workspaces where they're indexed
+        doc_locations = [self._get_doc_location(doc) for doc in documents]
+        for workspace_name, workspace_slug in self._workspace_slugs.items():
+            workspace_docs = self._workspace_doc_paths(workspace_slug)
+            if docs_to_remove := [
+                doc_loc for doc_loc in doc_locations if doc_loc in workspace_docs
+            ]:
+                log.debug(
+                    "Removing docs from workspace %s: %s",
+                    workspace_name,
+                    docs_to_remove,
+                )
+                remove_resp = requests.post(
+                    f"{self._workspace_details_url}/{workspace_slug}/update-embeddings",
+                    headers=self._headers,
+                    json={"deletes": docs_to_remove},
+                )
+                remove_resp.raise_for_status()
+
+        # Fully delete the docs
+        delete_resp = requests.delete(
+            self._doc_delete_url,
+            headers=self._headers,
+            json={"names": doc_locations},
+        )
+        delete_resp.raise_for_status()
+
+        # Clear out the fingerprints
+        for doc in documents:
+            self._storage.pop(doc.path)
 
     #####################
     ## Private Methods ##
     #####################
 
-    def _headers(self) -> dict:
-        return {
-            "Authorization": f"Bearer {self.apikey}",
-        }
+    @staticmethod
+    def _get_doc_title(doc: Document) -> str:
+        """Get the title to be used for this doc in Anything LLM's storage.
+
+        NOTE: Anything LLM does not support nested directories so we need to
+            flatten the path with '--' characters
+        """
+        raw_title = os.path.relpath(
+            doc.path, os.path.dirname(os.path.abspath(doc.root))
+        )
+        title = raw_title.replace(os.sep, "--")
+        log.debug2("Title for %s: %s", doc.path, title)
+        return title
+
+    def _get_doc_location(self, doc: Document) -> str:
+        """Get the location where the doc will be stored in AnythingLLM's doc
+        cache dir
+        """
+        return os.path.join(self._root_folder, self._get_doc_title(doc) + ".json")
 
     def _ensure_directory_path(self, dirpath: str):
         """Create the given document directory path exists"""
         resp = requests.post(
-            self.create_folder_url,
-            headers=self._headers(),
+            self._create_folder_url,
+            headers=self._headers,
             json={"name": dirpath},
         )
         # If it's a 500 because the dir already exists, that's ok! If any of the
@@ -228,15 +270,15 @@ class AnythingLLMIngestor(Ingestor):
 
     def _get_workspaces(self) -> list[dict]:
         """Get info about all workspaces"""
-        resp = requests.get(self.workspaces_url, headers=self._headers())
+        resp = requests.get(self._workspaces_url, headers=self._headers)
         resp.raise_for_status()
         return resp.json()["workspaces"]
 
     def _workspace_doc_paths(self, workspace_slug: str) -> list[str]:
         """Get the list of doc paths in a given workspace"""
         resp = requests.get(
-            f"{self.workspace_details_url}/{workspace_slug}",
-            headers=self._headers(),
+            f"{self._workspace_details_url}/{workspace_slug}",
+            headers=self._headers,
         )
         resp.raise_for_status()
         return [doc["docpath"] for doc in resp.json()["workspace"][0]["documents"]]
@@ -252,16 +294,16 @@ class AnythingLLMIngestor(Ingestor):
                     "Removing updated docs from %s: %s", workspace_slug, updated_docs
                 )
                 remove_resp = requests.post(
-                    f"{self.workspace_details_url}/{workspace_slug}/update-embeddings",
-                    headers=self._headers(),
+                    f"{self._workspace_details_url}/{workspace_slug}/update-embeddings",
+                    headers=self._headers,
                     json={"deletes": updated_docs},
                 )
                 remove_resp.raise_for_status()
 
             # Add all the docs as new to trigger indexing
             add_resp = requests.post(
-                f"{self.workspace_details_url}/{workspace_slug}/update-embeddings",
-                headers=self._headers(),
+                f"{self._workspace_details_url}/{workspace_slug}/update-embeddings",
+                headers=self._headers,
                 json={"adds": uploaded_docs},
             )
             add_resp.raise_for_status()
