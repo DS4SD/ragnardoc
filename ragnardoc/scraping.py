@@ -45,6 +45,7 @@ class FileScraper:
 
         # Scoped storage for detecting deletions
         self._storage = storage.namespace("__core_scraping__")
+        self._auto_delete = config.auto_delete
 
     def scrape(self) -> ScrapeResult:
         """Scrape the given path"""
@@ -81,7 +82,9 @@ class FileScraper:
         # Detect deleted docs
         this_scrape_data = {doc.path: doc.root for doc in output_docs}
         deleted_docs = []
-        if last_scrape_data := self._storage.get(self._scrape_cache_key):
+        if self._auto_delete and (
+            last_scrape_data := self._storage.get(self._scrape_cache_key)
+        ):
             last_scrape = json.loads(last_scrape_data)
             deleted_docs = [
                 Document(path=doc_path, root=doc_root)
