@@ -1,16 +1,14 @@
 """
 Unit tests for core types
 """
-# Standard
-from pathlib import Path
 
 # Local
 from ragnardoc import types
 
 
-def test_document_from_file(txt_data_file):
+def test_document_from_file(txt_data_file, data_dir):
     """Test that a document can be loaded from a file directly"""
-    doc = types.Document.from_file(txt_data_file, foo=1)
+    doc = types.Document.from_file(txt_data_file, data_dir, foo=1)
     assert isinstance(doc, types.Document)
     assert doc.path == str(txt_data_file)
     assert doc.converter is None
@@ -18,17 +16,17 @@ def test_document_from_file(txt_data_file):
     assert doc._content is None
 
 
-def test_document_from_file_proactive(txt_data_file):
+def test_document_from_file_proactive(txt_data_file, data_dir):
     """Test that a document can be loaded from a file directly and proactively
     loaded
     """
-    doc = types.Document.from_file(txt_data_file, load=True)
+    doc = types.Document.from_file(txt_data_file, data_dir, load=True)
     assert doc._content is not None
 
 
-def test_document_lazy_loading_no_conversion(txt_data_file):
+def test_document_lazy_loading_no_conversion(txt_data_file, data_dir):
     """Test that the document's content is lazily loaded without conversion"""
-    doc = types.Document.from_file(txt_data_file)
+    doc = types.Document.from_file(txt_data_file, data_dir)
     with open(txt_data_file, "r", encoding="utf-8") as handle:
         expected = handle.read()
     assert doc._content is None
@@ -36,14 +34,14 @@ def test_document_lazy_loading_no_conversion(txt_data_file):
     assert doc._content == expected
 
 
-def test_document_lazy_loading_with_conversion(txt_data_file):
+def test_document_lazy_loading_with_conversion(txt_data_file, data_dir):
     """Test that the document's content is lazily loaded with conversion"""
     expected = "converted!"
 
     def dummy_converter(ignored):
         return expected
 
-    doc = types.Document.from_file(txt_data_file, converter=dummy_converter)
+    doc = types.Document.from_file(txt_data_file, data_dir, converter=dummy_converter)
     assert doc._content is None
     assert doc.content == expected
     assert doc._content == expected
@@ -51,7 +49,7 @@ def test_document_lazy_loading_with_conversion(txt_data_file):
 
 def test_set_content():
     """Test that the content property can be set directly"""
-    doc = types.Document("some/bad/path")
+    doc = types.Document("some/bad/path", "foo/bar")
     assert doc._content is None
     content = "Hello there!"
     doc.content = content
@@ -59,7 +57,7 @@ def test_set_content():
     assert doc._content == content
 
 
-def test_fingerprint_content_change(scratch_dir):
+def test_fingerprint_content_change(scratch_dir, data_dir):
     """Test that the doc's fingerprint is computed correctly and mirrors changes
     to the document itself
     """
@@ -70,7 +68,7 @@ def test_fingerprint_content_change(scratch_dir):
         handle.write(content1)
 
     # Load from doc with initial content
-    doc = types.Document.from_file(doc_path)
+    doc = types.Document.from_file(doc_path, data_dir)
     fp1 = doc.fingerprint()
     read_content1 = doc.content
 

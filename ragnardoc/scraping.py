@@ -40,7 +40,7 @@ class FileScraper:
 
     def scrape(self) -> list[Document]:
         """Scrape the given path"""
-        files_to_ingest = []
+        files_to_ingest = {}
         for root in self.roots:
             log.debug("Scraping root: %s", root)
             for parent, _, files in os.walk(root):
@@ -54,14 +54,21 @@ class FileScraper:
                         self._match_paths(full_path, self.exclude_paths)
                         or self._match_regexprs(full_path, self.exclude_regexprs)
                     ):
-                        files_to_ingest.append(full_path)
+                        files_to_ingest.setdefault(root, []).append(full_path)
         log.debug4("All docs to ingest: %s", files_to_ingest)
 
         # Construct the docs (with lazy loading)
         output_docs = []
-        for fname in files_to_ingest:
-            converter = None if self._is_raw_text_type(fname) else self._convert_doc
-            output_docs.append(Document.from_file(path=fname, converter=converter))
+        for root, root_files in files_to_ingest.items():
+            for fname in root_files:
+                is_raw_text = self._is_raw_text_type(fname)
+                log.debug2(
+                    "Doc %s %s raw text", fname, "IS" if is_raw_text else "IS NOT"
+                )
+                converter = None if is_raw_text else self._convert_doc
+                output_docs.append(
+                    Document.from_file(path=fname, root=root, converter=converter)
+                )
         return output_docs
 
     ## Impl ##
@@ -75,7 +82,10 @@ class FileScraper:
         return any(expr.match(candidate) for expr in exprs)
 
     def _is_raw_text_type(self, candidate: str) -> bool:
-        return os.path.splitext(candidate)[1].lower() in self.raw_text_extensions
+        return (
+            os.path.splitext(candidate)[1].lower().lstrip(".")
+            in self.raw_text_extensions
+        )
 
     def _convert_doc(self, fname: str) -> Document | None:
         converted = self.converter.convert(fname)
