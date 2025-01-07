@@ -66,10 +66,14 @@ class FileScraper:
                         or self._match_regexprs(full_path, self.exclude_regexprs)
                     ):
                         files_to_ingest.setdefault(root, []).append(full_path)
+        all_ingest_paths = [doc for root in files_to_ingest.values() for doc in root]
+        for include_path in self.include_paths:
+            if include_path not in all_ingest_paths:
+                files_to_ingest.setdefault(os.path.sep, []).append(include_path)
         log.debug4("All docs to ingest: %s", files_to_ingest)
 
         # Construct the docs (with lazy loading)
-        output_docs = []
+        output_docs = {}
         for root, root_files in files_to_ingest.items():
             for fname in root_files:
                 is_raw_text = self._is_raw_text_type(fname)
@@ -77,12 +81,15 @@ class FileScraper:
                     "Doc %s %s raw text", fname, "IS" if is_raw_text else "IS NOT"
                 )
                 converter = None if is_raw_text else self._convert_doc
-                output_docs.append(
-                    Document.from_file(path=fname, root=root, converter=converter)
-                )
+                # Sometimes docs are found multiple times with redundant roots
+                # or includes
+                if fname not in output_docs:
+                    output_docs[fname] = Document.from_file(
+                        path=fname, root=root, converter=converter
+                    )
 
         # Detect deleted docs
-        this_scrape_data = {doc.path: doc.root for doc in output_docs}
+        this_scrape_data = {doc.path: doc.root for doc in output_docs.values()}
         deleted_docs = []
         if self._auto_delete and (
             last_scrape_data := self._storage.get(self._scrape_cache_key)
@@ -98,7 +105,7 @@ class FileScraper:
         self._storage.set(self._scrape_cache_key, json.dumps(this_scrape_data))
 
         # Return the full result of the scrape
-        return ScrapeResult(documents=output_docs, removed=deleted_docs)
+        return ScrapeResult(documents=list(output_docs.values()), removed=deleted_docs)
 
     ## Impl ##
 
