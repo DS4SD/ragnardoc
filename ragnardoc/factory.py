@@ -7,11 +7,19 @@ Derived from: https://github.com/caikit/caikit/blob/main/caikit/core/toolkit/fac
 
 # Standard
 import abc
+import copy
 import importlib
+
+# Third Party
+import jsonschema
+import jsonschema.exceptions
 
 # First Party
 import aconfig
 import alog
+
+# Local
+from .config.merge import merge_configs
 
 log = alog.use_channel("FCTRY")
 
@@ -22,6 +30,10 @@ class FactoryConstructible(abc.ABC):
     itself with the factory.
     """
 
+    # This is the set of default values for the config that me be set by child
+    # implementations
+    config_defaults = {}
+
     @property
     @classmethod
     @abc.abstractmethod
@@ -29,6 +41,12 @@ class FactoryConstructible(abc.ABC):
         """This is the name of this constructible type that will be used by
         the factory to identify this class
         """
+
+    @property
+    @classmethod
+    @abc.abstractmethod
+    def config_schema(cls) -> dict:
+        """This is the jsonschema dict for this instance's config"""
 
     @abc.abstractmethod
     def __init__(self, config: aconfig.Config, instance_name: str, **kwargs):
@@ -70,19 +88,35 @@ class Factory:
         self,
         instance_config: dict,
         instance_name: str | None = None,
+        *,
+        validate: bool = True,
         **kwargs,
     ) -> FactoryConstructible:
         """Construct an instance of the given type"""
         inst_type = instance_config.get(self.__class__.TYPE_KEY)
+        inst_cls = self._registered_types.get(inst_type)
         inst_cfg = aconfig.Config(
-            instance_config.get(self.__class__.CONFIG_KEY, {}),
+            merge_configs(
+                copy.deepcopy(inst_cls.config_defaults),
+                instance_config.get(self.__class__.CONFIG_KEY, {}),
+            ),
             override_env_vars=False,
         )
-        inst_cls = self._registered_types.get(inst_type)
         assert (
             inst_cls is not None
         ), f"No {self.name} class registered for type {inst_type}"
         instance_name = instance_name or inst_cls.name
+        if validate:
+            try:
+                # NOTE: This explicitly allows additional properties
+                jsonschema.validate(instance=inst_cfg, schema=inst_cls.config_schema)
+            except jsonschema.exceptions.ValidationError as err:
+                log.error(
+                    "Failed to construct [%s] due to invalid config: %s",
+                    instance_name,
+                    err,
+                )
+                raise
         return inst_cls(inst_cfg, instance_name, **kwargs)
 
 

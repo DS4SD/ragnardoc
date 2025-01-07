@@ -23,11 +23,11 @@ class RagnardocCore:
     def __init__(self, config: aconfig.Config | None = None):
         self.config = config or default_config
 
-        # Construct the scraper
-        self.scraper = FileScraper(self.config.scraping)
-
         # Construct the storage
         self.storage = storage_factory.construct(self.config.storage)
+
+        # Construct the scraper
+        self.scraper = FileScraper(self.storage, self.config.scraping)
 
         # Construct the ingestors
         self.ingestors = [
@@ -43,7 +43,16 @@ class RagnardocCore:
         """Run a single ingestion cycle"""
         log.debug("Initializing scrape")
         with alog.ContextTimer(log.debug, "Done scraping in: "):
-            docs = self.scraper.scrape()
+            scrape_result = self.scraper.scrape()
         for ingestor in self.ingestors:
             log.debug("Ingesting into %s", ingestor.name)
-            ingestor.ingest(docs)
+            if scrape_result.documents:
+                with alog.ContextLog(
+                    log.info, "Ingesting %d docs", len(scrape_result.documents)
+                ):
+                    ingestor.ingest(scrape_result.documents)
+            if scrape_result.removed:
+                with alog.ContextLog(
+                    log.info, "Removing %d docs", len(scrape_result.removed)
+                ):
+                    ingestor.delete(scrape_result.removed)

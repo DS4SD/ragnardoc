@@ -16,6 +16,7 @@ dependencies = [
     "alchemy-logging>=1.5,<2",
     "docling>=2.14.0,<3",
     "requests>=2.32.3,<3",
+    "jsonschema>=4.23.0,<5",
 ]
 
 [project.scripts]

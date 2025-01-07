@@ -21,6 +21,8 @@ class Document:
 
     # The path on disk to the document
     path: str
+    # The root used to scrape this document
+    root: str
     # The title of the document. If unset, the document's basename will be used
     title: str | None = None
     # Additional document metadata
@@ -87,6 +89,7 @@ class Document:
     def from_file(
         cls,
         path: str | Path,
+        root: str | Path,
         converter: Converter | None = None,
         load: bool = False,
         **metadata,
@@ -94,7 +97,9 @@ class Document:
         """Read the Document from the file. By default, it is lazy loaded unless
         load is True.
         """
-        inst = cls(path=str(path), converter=converter, metadata=metadata)
+        inst = cls(
+            path=str(path), root=str(root), converter=converter, metadata=metadata
+        )
         if load:
             inst.load()
         return inst
@@ -111,3 +116,13 @@ class Document:
             else:
                 with open(self.path, encoding="utf-8") as handle:
                     self._content = handle.read()
+
+
+@dataclass
+class ScrapeResult:
+    """The result of a single scrape is a set of documents that exist and a set
+    that have been removed
+    """
+
+    documents: list[Document]
+    removed: list[Document]

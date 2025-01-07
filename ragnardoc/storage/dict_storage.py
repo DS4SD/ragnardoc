@@ -10,6 +10,7 @@ class DictStorage(StorageBase):
     __doc__ = __doc__
 
     name = "dict"
+    config_schema = {"type": "object"}
 
     def __init__(self, *_, **__):
         self._data = {}

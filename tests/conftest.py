@@ -13,8 +13,8 @@ import pytest
 import alog
 
 alog.configure(
-    default_level=os.getenv("LOG_LEVEL"),
-    filters=os.getenv("LOG_FILTERS"),
+    default_level=os.getenv("LOG_LEVEL", "error"),
+    filters=os.getenv("LOG_FILTERS", ""),
     formatter="json" if os.getenv("LOG_JSON", "").lower() == "true" else "pretty",
     thread_id=os.getenv("LOG_THREAD_IDF", "").lower() == "true",
 )

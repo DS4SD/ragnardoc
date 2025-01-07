@@ -2,6 +2,7 @@
 Module for scraping files to ingest
 """
 # Standard
+import json
 import os
 import re
 
@@ -13,13 +14,17 @@ import aconfig
 import alog
 
 # Local
-from .types import Document
+from .storage import StorageBase
+from .types import Document, ScrapeResult
 
 log = alog.use_channel("SCRAPING")
 
 
 class FileScraper:
-    def __init__(self, config: aconfig.Config):
+
+    _scrape_cache_key = "scrape_cache"
+
+    def __init__(self, storage: StorageBase, config: aconfig.Config):
         # Load the docling converter
         with alog.ContextTimer(log.debug, "Loaded doc converter in: "):
             self.converter = DocumentConverter()
@@ -38,9 +43,13 @@ class FileScraper:
         self.exclude_paths = config.exclude.paths
         self.exclude_regexprs = [re.compile(expr) for expr in config.exclude.regexprs]
 
-    def scrape(self) -> list[Document]:
+        # Scoped storage for detecting deletions
+        self._storage = storage.namespace("__core_scraping__")
+        self._auto_delete = config.auto_delete
+
+    def scrape(self) -> ScrapeResult:
         """Scrape the given path"""
-        files_to_ingest = []
+        files_to_ingest = {}
         for root in self.roots:
             log.debug("Scraping root: %s", root)
             for parent, _, files in os.walk(root):
@@ -54,15 +63,40 @@ class FileScraper:
                         self._match_paths(full_path, self.exclude_paths)
                         or self._match_regexprs(full_path, self.exclude_regexprs)
                     ):
-                        files_to_ingest.append(full_path)
+                        files_to_ingest.setdefault(root, []).append(full_path)
         log.debug4("All docs to ingest: %s", files_to_ingest)
 
         # Construct the docs (with lazy loading)
         output_docs = []
-        for fname in files_to_ingest:
-            converter = None if self._is_raw_text_type(fname) else self._convert_doc
-            output_docs.append(Document.from_file(path=fname, converter=converter))
-        return output_docs
+        for root, root_files in files_to_ingest.items():
+            for fname in root_files:
+                is_raw_text = self._is_raw_text_type(fname)
+                log.debug2(
+                    "Doc %s %s raw text", fname, "IS" if is_raw_text else "IS NOT"
+                )
+                converter = None if is_raw_text else self._convert_doc
+                output_docs.append(
+                    Document.from_file(path=fname, root=root, converter=converter)
+                )
+
+        # Detect deleted docs
+        this_scrape_data = {doc.path: doc.root for doc in output_docs}
+        deleted_docs = []
+        if self._auto_delete and (
+            last_scrape_data := self._storage.get(self._scrape_cache_key)
+        ):
+            last_scrape = json.loads(last_scrape_data)
+            deleted_docs = [
+                Document(path=doc_path, root=doc_root)
+                for doc_path, doc_root in last_scrape.items()
+                if doc_path not in this_scrape_data
+            ]
+
+        # Add this scrape to the last scrape cache
+        self._storage.set(self._scrape_cache_key, json.dumps(this_scrape_data))
+
+        # Return the full result of the scrape
+        return ScrapeResult(documents=output_docs, removed=deleted_docs)
 
     ## Impl ##
 
@@ -75,7 +109,10 @@ class FileScraper:
         return any(expr.match(candidate) for expr in exprs)
 
     def _is_raw_text_type(self, candidate: str) -> bool:
-        return os.path.splitext(candidate)[1].lower() in self.raw_text_extensions
+        return (
+            os.path.splitext(candidate)[1].lower().lstrip(".")
+            in self.raw_text_extensions
+        )
 
     def _convert_doc(self, fname: str) -> Document | None:
         converted = self.converter.convert(fname)

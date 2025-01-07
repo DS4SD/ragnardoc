@@ -22,6 +22,17 @@ class SqliteStorage(StorageBase):
     __doc__ = __doc__
 
     name = "sqlite"
+    config_schema = {
+        "type": "object",
+        "properties": {
+            "db_path": {
+                "type": "string",
+                "description": "Path or filename for DB file. Non-absolute paths will be placed in RAGNARDOC_HOME",
+            },
+        },
+        "required": ["db_path"],
+    }
+    config_defaults = {"db_path": "storage.db"}
 
     def __init__(self, config: aconfig.Config, *_, **__) -> None:
         db_path = config.db_path

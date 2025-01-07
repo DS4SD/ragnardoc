@@ -81,3 +81,10 @@ def test_ragnardoc_home_db(scratch_dir):
             {"type": "sqlite", "config": {"db_path": "some_storage.db"}}
         )
         assert inst._db_path == str(scratch_dir / "some_storage.db")
+
+
+def test_config_defaults(scratch_dir):
+    """Test that if db path given, the default is used"""
+    with mock.patch.object(config, "ragnardoc_home", scratch_dir):
+        inst = storage_factory.construct({"type": "sqlite"})
+        assert inst._db_path == str(scratch_dir / "storage.db")
