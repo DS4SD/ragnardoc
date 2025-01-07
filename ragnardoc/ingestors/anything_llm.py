@@ -164,7 +164,7 @@ class AnythingLLMIngestor(Ingestor):
             # approximates "update" semantics.
             try:
                 upload_location = resp_json["documents"][0]["location"]
-            except IndexError:
+            except KeyError:
                 log.warning("No location found in first document!")
                 continue
             target_location = self._get_doc_location(doc)
