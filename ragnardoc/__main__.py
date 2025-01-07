@@ -33,7 +33,9 @@ def main():
 
     # Add the args for the specific command
     cmd_inst = cmd_cls()
-    cmd_inst.add_args(parser.add_argument_group(cmd_cls.name))
+    cmd_inst.add_args(
+        parser.add_argument_group(cmd_cls.name, description=cmd_cls.__doc__)
+    )
 
     # Parse all args and handle common setup
     args = parser.parse_args()
