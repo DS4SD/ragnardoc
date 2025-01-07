@@ -84,6 +84,10 @@ class Factory:
         ), f"Conflicting registration of {constructible.name}"
         self._registered_types[constructible.name] = constructible
 
+    def registered_types(self) -> list[str]:
+        """Get the list of registered types"""
+        return list(sorted(self._registered_types.keys()))
+
     def construct(
         self,
         instance_config: dict,

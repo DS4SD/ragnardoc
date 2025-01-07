@@ -37,9 +37,7 @@ class SqliteStorage(StorageBase):
     def __init__(self, config: aconfig.Config, *_, **__) -> None:
         db_path = config.db_path
         if not os.path.isabs(db_path):
-            db_path = os.path.join(
-                os.path.expanduser(base_config.ragnardoc_home), db_path
-            )
+            db_path = os.path.join(base_config.ragnardoc_home, db_path)
         self._db_path = os.path.abspath(db_path)
         log.debug("DB Path: %s", self._db_path)
         os.makedirs(os.path.dirname(self._db_path), exist_ok=True)

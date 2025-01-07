@@ -13,73 +13,38 @@ import argparse
 import alog
 
 # Local
-from . import config
-from .core import RagnardocCore
+from . import cli, config
 
 log = alog.use_channel("MAIN")
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    # Initial parser to parse the command
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("command", choices=sorted(cli.all_commands.keys()))
+    initial_args = parser.parse_known_args()[0]
 
-    # Logging
-    parser.add_argument(
-        "--log-level", "-l", default=config.log_level, help="Default log channel level"
-    )
-    parser.add_argument(
-        "--log-filters",
-        "-lf",
-        default=config.log_filters,
-        help="Per-channel log filters",
-    )
-    parser.add_argument(
-        "--log-json",
-        "-lj",
-        action="store_true",
-        default=config.log_json,
-        help="Log output as JSON",
-    )
-    parser.add_argument(
-        "--log-thread-id",
-        "-lt",
-        action="store_true",
-        default=config.log_thread_id,
-        help="Include the thread ID in log header",
+    # Full parser to parse the command arguments
+    command = initial_args.command
+    cmd_cls = cli.all_commands[command]
+    parser = argparse.ArgumentParser(description=parser.description)
+    parser.add_argument("command", choices=sorted(cli.all_commands.keys()))
+    cli.add_common(parser)
+
+    # Add the args for the specific command
+    cmd_inst = cmd_cls()
+    cmd_inst.add_args(
+        parser.add_argument_group(cmd_cls.name, description=cmd_cls.__doc__)
     )
 
-    # Operation mode
-    parser.add_argument(
-        "--mode",
-        "-m",
-        default=config.mode,
-        choices=["cli", "service"],
-        help="Mode of operation for the tool",
-    )
-
-    # Parse and configure logging
+    # Parse all args and handle common setup
     args = parser.parse_args()
-    alog.configure(
-        default_level=args.log_level,
-        filters=args.log_filters,
-        formatter="json" if args.log_json else "pretty",
-        thread_id=args.log_thread_id,
-    )
-    log.info("RAGNARDoc is starting up in [%s] mode", args.mode)
+    cli.use_common(args)
+
+    # Run the command
+    log.info("RAGNARDoc is running command %s", command)
     log.debug4("Full config: %s", config.config_instance)
-
-    # Construct the core instance
-    instance = RagnardocCore(config)
-
-    # If operating as a CLI, run a single time
-    if args.mode == "cli":
-        with alog.ContextTimer(log.info, "Finished CLI ingestion in: "):
-            instance.ingest()
-    elif args.mode == "service":
-        raise NotImplementedError(
-            "Service mode is not currently supported. Coming soon!"
-        )
-    else:
-        raise RuntimeError(f"Unknown mode: {args.mode}")
+    cmd_inst.run(args)
 
 
 if __name__ == "__main__":
