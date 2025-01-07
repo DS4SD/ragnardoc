@@ -17,8 +17,11 @@ def _initialize_config() -> aconfig.ImmutableConfig:
     # Parse the base config with env var overrides
     config = aconfig.Config.from_yaml(BASE_CONFIG_PATH, override_env_vars=True)
 
+    # Make sure '~' is expanded correctly
+    config.ragnardoc_home = os.path.expanduser(config.ragnardoc_home)
+
     # Merge in user overrides
-    user_config = os.path.join(os.path.expanduser(config.ragnardoc_home), "config.yaml")
+    user_config = os.path.join(config.ragnardoc_home, "config.yaml")
     if os.path.exists(user_config):
         config = merge_configs(config, aconfig.Config.from_yaml(user_config))
 
