@@ -111,7 +111,11 @@ class InitCommand(CommandBase):
                 initializer = ingestor_init()
                 if initializer.is_installed():
                     if self._ask_yes_no(f"Initialize {initializer.name}", True):
-                        ingestor_config = initializer.initialize_config()
+                        ingestor_config = (
+                            initializer.initialize_config()
+                            if not self.auto
+                            else {"type": initializer.name}
+                        )
                         user_config.setdefault("ingestion", {}).setdefault(
                             "plugins", []
                         ).append(ingestor_config)
