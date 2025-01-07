@@ -6,9 +6,6 @@ import json
 import os
 import re
 
-# Third Party
-from docling.document_converter import DocumentConverter
-
 # First Party
 import aconfig
 import alog
@@ -25,6 +22,11 @@ class FileScraper:
     _scrape_cache_key = "scrape_cache"
 
     def __init__(self, storage: StorageBase, config: aconfig.Config):
+
+        # NOTE: Local import to avoid slow imports for non-run commands
+        # Third Party
+        from docling.document_converter import DocumentConverter
+
         # Load the docling converter
         with alog.ContextTimer(log.debug, "Loaded doc converter in: "):
             self.converter = DocumentConverter()
