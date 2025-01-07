@@ -4,12 +4,14 @@ RAGNARDoc (RAG Native Automatic Reingest Docs) is a tool that runs natively on a
 
 ![ragnardoc duck](./ragnardoc.png)
 
-## Installation
+## Quick Start
 
 ```sh
 pip install git+https://github.ibm.com/ghart/ragnardoc
 # Validate that the install works!
 ragnardoc --help
+# Initialize ragnardoc on your system
+ragnardoc init
 ```
 
 ## Configuration
