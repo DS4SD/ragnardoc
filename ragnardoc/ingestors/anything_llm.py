@@ -53,9 +53,10 @@ class AnythingLLMIngestor(Ingestor):
                 "description": "List of workspaces to add documents to",
             },
         },
-        "required": ["base_url", "apikey"],
+        "required": ["apikey"],
     }
     config_defaults = {
+        "base_url": "http://localhost:3001",
         "root_folder": "ragnardoc",
         "workspaces": [],
     }
