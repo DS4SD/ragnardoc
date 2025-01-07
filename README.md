@@ -8,10 +8,12 @@ RAGNARDoc (RAG Native Automatic Reingest Docs) is a tool that runs natively on a
 
 ```sh
 pip install git+https://github.ibm.com/ghart/ragnardoc
-# Validate that the install works!
-ragnardoc --help
 # Initialize ragnardoc on your system
 ragnardoc init
+# Add a directory to be ingested
+ragnardoc add ~/Documents
+# Run an ingestion
+ragnardoc run
 ```
 
 ## Configuration
