@@ -19,6 +19,7 @@ from ... import config
 from ...ingestors import ingestor_factory
 from ..base import CommandBase
 from .anything_llm_initializer import AnythingLLMInitializer
+from .open_webui_initializer import OpenWebUIInitializer
 
 log = alog.use_channel("INIT")
 
@@ -106,6 +107,7 @@ class InitCommand(CommandBase):
             print("Detecting available ingestors")
             for ingestor_init in [
                 AnythingLLMInitializer,
+                OpenWebUIInitializer,
             ]:
                 initializer = ingestor_init()
                 if initializer.is_installed():
