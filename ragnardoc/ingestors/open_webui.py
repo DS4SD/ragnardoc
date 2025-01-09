@@ -22,7 +22,7 @@ from .base import Ingestor
 log = alog.use_channel("OPENWEBUI")
 
 
-class OpenWebUILLMIngestor(Ingestor):
+class OpenWebUIIngestor(Ingestor):
     __doc__ = __doc__
 
     name = "open-webui"
