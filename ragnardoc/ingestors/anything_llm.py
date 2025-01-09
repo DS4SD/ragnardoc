@@ -61,8 +61,6 @@ class AnythingLLMIngestor(Ingestor):
         "workspaces": [],
     }
 
-    _time_format = "%Y-%m-%d-%H-%M-%S"
-
     def __init__(
         self,
         config: aconfig.Config,
@@ -107,7 +105,7 @@ class AnythingLLMIngestor(Ingestor):
     #######################
 
     def ingest(self, documents: list[Document]):
-        """Ingest the document with a name matching the"""
+        """Ingest the documents, updating existing docs as necessary"""
         # Ensure the base ragnardoc folder exists
         self._ensure_directory_path(self._root_folder)
 
