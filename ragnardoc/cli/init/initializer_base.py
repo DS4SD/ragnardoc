@@ -56,7 +56,7 @@ class IngestorInitializerBase(abc.ABC):
                 self._recursive_set(config_dict, ingestor_class.config_schema, key, val)
             except KeyError as err:
                 print(f"Could not set [{key} = {val}]: {err}")
-        return config_dict
+        return return_dict
 
     @classmethod
     def _recursive_set(cls, config_dict: dict, schema: dict, key: str, val: str):
