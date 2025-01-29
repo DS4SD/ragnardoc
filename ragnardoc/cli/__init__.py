@@ -7,6 +7,7 @@ from .add import AddCommand
 from .common import add_common, use_common
 from .init import InitCommand
 from .run import RunCommand
+from .start import StartCommand
 
 all_commands = {
     cmd.name: cmd
@@ -14,5 +15,6 @@ all_commands = {
         AddCommand,
         InitCommand,
         RunCommand,
+        StartCommand,
     ]
 }
