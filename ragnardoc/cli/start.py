@@ -28,6 +28,7 @@ class StartCommand(CommandBase):
     def __init__(self):
         self._period = self._parse_time(config.service.period)
         self._cmd = f"{sys.executable} -m ragnardoc run"
+        self._running = False
 
     def add_args(self, parser: argparse.ArgumentParser):
         """Add the args to configure the periodic scraping"""
@@ -38,10 +39,16 @@ class StartCommand(CommandBase):
             help="The period to run the ingestion service",
         )
 
+    def stop(self):
+        self._running = False
+
     def run(self, args: argparse.Namespace):
         """Start the infinite loop to run periodically"""
-        period = args.period or self._period
-        while True:
+        period = self._period
+        if args.period:
+            period = self._parse_time(args.period)
+        self._running = True
+        while self._running:
             log.info("Running ingestion service")
             self._ingest()
             log.info("Sleeping for %s", period)
@@ -51,16 +58,16 @@ class StartCommand(CommandBase):
         """Run the ingestion as a subprocess. This is done so that config
         changes are re-parsed on very run.
         """
-        with alog.ContextTimer("Ingestion done in: %s"):
+        with alog.ContextTimer(log.debug, "Ingestion done in: %s"):
             subprocess.run(shlex.split(self._cmd))
 
     @staticmethod
     def _parse_time(time_str: str) -> timedelta:
         """Parse a time string into a timedelta object"""
-        pattern = r"(\d+)([dhms])\s*"
+        pattern = r"(\d+\.?\d*)([dhms])\s*"
         seconds = 0
         for match in re.finditer(pattern, time_str):
-            value = int(match.group(1))
+            value = float(match.group(1))
             unit = match.group(2)
             if unit == "s":
                 seconds += value
@@ -70,8 +77,6 @@ class StartCommand(CommandBase):
                 seconds += value * 60 * 60
             elif unit == "d":
                 seconds += value * 60 * 60 * 24
-            else:
-                raise ValueError(f"Invalid time string: {time_str}")
         if not seconds:
             raise ValueError(f"Invalid time string: {time_str}")
         return timedelta(seconds=seconds)
