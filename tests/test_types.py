@@ -1,6 +1,8 @@
 """
 Unit tests for core types
 """
+# Standard
+import time
 
 # Local
 from ragnardoc import types
@@ -79,6 +81,18 @@ def test_fingerprint_content_change(scratch_dir, data_dir):
     # Update the doc content
     with open(doc_path, "w") as handle:
         handle.write(content2)
+        handle.flush()
+
+    # Make sure the content has been updated on the filesystem
+    max_time = 1
+    start_time = time.time()
+    while time.time() - start_time < max_time:
+        with open(doc_path, "r") as handle:
+            if handle.read() == content2:
+                break
+        time.sleep(0.01)
+    else:
+        raise Exception("Failed to update file contents")
 
     # Make sure the fingerprint changes and the content is invalidated and
     # re-loaded
