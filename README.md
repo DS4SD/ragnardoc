@@ -2,7 +2,7 @@
 
 RAGNARDoc (RAG Native Automatic Reingestion for Documents) is a tool that runs natively on a developer workstation and automatically ingests local documents into various Retrieval Augmented Generation indexes. It is designed as a companion app for workstation RAG applications which would benefit from maintaining an up-to-date view of documents hosted natively on a user's workstation.
 
-![ragnardoc duck](./ragnardoc.png)
+![ragnardoc duck](https://github.com/DS4SD/ragnardoc/blob/main/ragnardoc.png)
 
 ## Quick Start
 
@@ -20,7 +20,7 @@ ragnardoc start & disown
 
 ## Configuration
 
-The configuration for RAGNARDoc is managed by a yaml file. The default location is `$HOME/.ragnardoc/config.yaml`, but can be overloaded with the `RAGNARDOC_HOME` environment variable. All default values can be found in [config.yaml](./ragnardoc/config/config.yaml) in the codebase.
+The configuration for RAGNARDoc is managed by a yaml file. The default location is `$HOME/.ragnardoc/config.yaml`, but can be overloaded with the `RAGNARDOC_HOME` environment variable. All default values can be found in [config.yaml](https://github.com/DS4SD/ragnardoc/blob/main/ragnardoc/config/config.yaml) in the codebase.
 
 ### Configuring
 
