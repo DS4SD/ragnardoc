@@ -14,6 +14,8 @@ ragnardoc init
 ragnardoc add ~/Documents
 # Run an ingestion
 ragnardoc run
+# Start as a background service
+ragnardoc start & disown
 ```
 
 ## Configuration
@@ -91,4 +93,3 @@ ingestion:
 
 - Per-ingestor inclusion / exclusion
 - Abstract scrapers to allow non-local scraping
-- Service mode!
