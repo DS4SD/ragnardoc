@@ -41,12 +41,16 @@ dev-test = [
 dev-fmt = [
     "ruff==0.4.7",
     "pre-commit>=3.0.4,<4.0",
-    "pydeps>=1.12.12,<2",
+]
+
+dev-build = [
+    "build",
+    "twine",
 ]
 
 # NOTE: This is "all" from the user and dev perspective
 all = [
-    "ragnardoc[dev-test, dev-fmt]"
+    "ragnardoc[dev-test, dev-fmt, dev-build]"
 ]
 
 [tool.setuptools.packages.find]

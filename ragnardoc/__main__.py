@@ -14,6 +14,7 @@ import alog
 
 # Local
 from . import cli, config
+from ._version import __version__
 
 log = alog.use_channel("MAIN")
 
@@ -21,21 +22,30 @@ log = alog.use_channel("MAIN")
 def main():
     # Initial parser to parse the command
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("command", choices=sorted(cli.all_commands.keys()))
+    parser.add_argument("command", nargs="?", choices=sorted(cli.all_commands.keys()))
+    parser.add_argument(
+        "--version", "-v", action="store_true", help="Show the library version"
+    )
     initial_args = parser.parse_known_args()[0]
+
+    # Handle version
+    if initial_args.version:
+        print(__version__)
+        return 0
 
     # Full parser to parse the command arguments
     command = initial_args.command
-    cmd_cls = cli.all_commands[command]
+    cmd_cls = cli.all_commands.get(command)
     parser = argparse.ArgumentParser(description=parser.description)
     parser.add_argument("command", choices=sorted(cli.all_commands.keys()))
     cli.add_common(parser)
 
     # Add the args for the specific command
-    cmd_inst = cmd_cls()
-    cmd_inst.add_args(
-        parser.add_argument_group(cmd_cls.name, description=cmd_cls.__doc__)
-    )
+    if cmd_cls:
+        cmd_inst = cmd_cls()
+        cmd_inst.add_args(
+            parser.add_argument_group(cmd_cls.name, description=cmd_cls.__doc__)
+        )
 
     # Parse all args and handle common setup
     args = parser.parse_args()
