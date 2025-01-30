@@ -4,6 +4,7 @@ Unit tests for the start command
 # Standard
 from datetime import timedelta
 from unittest import mock
+import argparse
 import threading
 import time
 
@@ -50,3 +51,11 @@ def test_run(run_mock):
     cmd.stop()
     run_thread.join()
     assert run_mock.called_once()
+
+
+def test_add_args():
+    """Test that the command adds the expected arguments"""
+    parser = argparse.ArgumentParser()
+    StartCommand().add_args(parser)
+    args = parser.parse_args([])
+    assert hasattr(args, "period")
