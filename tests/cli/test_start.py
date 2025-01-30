@@ -50,7 +50,7 @@ def test_run(run_mock):
     time.sleep(0.05)
     cmd.stop()
     run_thread.join()
-    assert run_mock.called_once()
+    run_mock.assert_called_once()
 
 
 def test_add_args():
