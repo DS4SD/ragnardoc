@@ -4,7 +4,7 @@ requires = ["setuptools>=60", "setuptools-scm>=8.0"]
 [project]
 name = "ragnardoc"
 dynamic = ["version"]
-description = "RAGNARDoc (RAG Native Automatic Reingest Docs) is a tool that runs natively on a developer workstation and automatically ingests local documents into various Retrieval Augmented Generation indexes. It is designed as a companion app for workstation RAG applications which would benefit from maintaining an up-to-date view of documents hosted natively on a user's workstation."
+description = "RAGNARDoc (RAG Native Automatic Reingestion for Documents) is a tool that runs natively on a developer workstation and automatically ingests local documents into various Retrieval Augmented Generation indexes. It is designed as a companion app for workstation RAG applications which would benefit from maintaining an up-to-date view of documents hosted natively on a user's workstation."
 license = {text = "Apache-2.0"}
 readme = "README.md"
 requires-python = ">=3.11"
@@ -56,9 +56,8 @@ include = ["ragnardoc"]
 [tool.setuptools_scm]
 write_to = "ragnardoc/_version.py"
 
-# TODO
-# [project.urls]
-# Source = "https://github.com/IBM/ragnardoc"
+[project.urls]
+Source = "https://github.com/DS4SD/ragnardoc"
 
 [tool.ruff]
 line-length = 100
