@@ -28,6 +28,10 @@ scraping:
     paths: []
     regexprs: []
 
+# Scraping service config
+service:
+  period: 5m
+
 # Document ingestion config
 ingestion:
   # Factory list of ingestion plugins to ingest to

@@ -1,6 +1,8 @@
 """
 Unit tests for core types
 """
+# Standard
+import time
 
 # Local
 from ragnardoc import types
@@ -60,10 +62,20 @@ def test_set_content():
 def test_fingerprint_content_change(scratch_dir, data_dir):
     """Test that the doc's fingerprint is computed correctly and mirrors changes
     to the document itself
+
+    NOTE: This test in a previous version did expose a weakness in the current
+        fingerprint implementation that uses os.stat: If the content changes to
+        something of the exact same length AND the change happens so quickly
+        after the initial write that the timestamp precision results in an exact
+        equivalent, there's no way to tell the difference with os.stat! This is
+        an acceptable limitation given that in ragnardoc, changes would be made
+        by users generally who are not operating at this speed.
     """
     doc_path = scratch_dir / "doc.txt"
     content1 = "Hello World"
-    content2 = "Hiya world!"
+    # NOTE: This was previously "Hiya world!" which exposed the race condition
+    #   with os.stat being exactly equivalent.
+    content2 = "Hiya world! How's life these days?"
     with open(doc_path, "w") as handle:
         handle.write(content1)
 
@@ -77,8 +89,9 @@ def test_fingerprint_content_change(scratch_dir, data_dir):
     assert doc.content == read_content1 == content1
 
     # Update the doc content
-    with open(doc_path, "w") as handle:
+    with open(doc.path, "w") as handle:
         handle.write(content2)
+        handle.flush()
 
     # Make sure the fingerprint changes and the content is invalidated and
     # re-loaded
