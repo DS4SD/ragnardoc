@@ -60,7 +60,6 @@ class OpenWebUIIngestor(Ingestor):
         # NOTE: Open WebUI is very sensitive to the trailing slash! Some
         #   endpoints require it, others require it to not be present.
         self._base_url = config.base_url
-        self._version_url = f"{self._base_url}/api/version"
         self._files_url = f"{self._base_url}/api/v1/files/"
         self._knowledge_url = f"{self._base_url}/api/v1/knowledge/"
 
@@ -84,6 +83,7 @@ class OpenWebUIIngestor(Ingestor):
         """Ingest the documents, updating existing docs as necessary"""
         uploaded_doc_ids = []
         for doc in documents:
+            log.debug3("Checking %s for Open WebUI ingestion", doc.path)
 
             # Check to see if this doc has changed since last ingesting
             fingerprint = doc.fingerprint()
@@ -106,14 +106,14 @@ class OpenWebUIIngestor(Ingestor):
             # Check to see if the file already exists in Open WebUI
             file_exists = False
             if file_id:
-                resp = requests.get(f"{self._files_url}/{file_id}")
+                resp = requests.get(f"{self._files_url}{file_id}")
                 file_exists = resp.status_code == 200
 
             # If the file already exists, update its content
             if file_exists:
                 log.debug2("Updating existing file %s with id %s", doc.path, file_id)
                 resp = requests.post(
-                    f"{self._files_url}/{file_id}/content/update",
+                    f"{self._files_url}{file_id}/content/update",
                     headers=self._headers,
                     json={"content": doc_content},
                 )
@@ -143,6 +143,7 @@ class OpenWebUIIngestor(Ingestor):
 
             # Otherwise, upload it
             else:
+                log.debug2("Uploading new document: %s", doc.path)
                 # Get the filename that will be used in Open WebUI
                 filename = self._get_filename(doc)
                 resp = requests.post(
@@ -161,12 +162,22 @@ class OpenWebUIIngestor(Ingestor):
                     continue
 
                 # Add this doc to the knowledge collection
+                log.debug2(
+                    "Adding doc with id %s to knowledge collection %s",
+                    file_id,
+                    self._knowledge_id,
+                )
                 resp = requests.post(
                     f"{self._knowledge_collection_url}/file/add",
                     headers=self._headers,
                     json={"file_id": file_id},
                 )
-                if resp.status_code != 200:
+                if (
+                    resp.status_code == 400
+                    and "Duplicate content detected" in resp.text
+                ):
+                    log.debug("Doc %s already added to knowledge collection", doc.path)
+                elif resp.status_code != 200:
                     log.warning(
                         "Failed to add document %s with id %s to knowledge collection: %s",
                         doc.path,
@@ -203,9 +214,7 @@ class OpenWebUIIngestor(Ingestor):
                 continue
 
             # Delete it
-            resp = requests.delete(
-                f"{self._files_url}/{file_id}", headers=self._headers
-            )
+            resp = requests.delete(f"{self._files_url}{file_id}", headers=self._headers)
             if resp.status_code != 200:
                 log.warning("Failed to delete doc with id %s", file_id)
 
