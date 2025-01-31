@@ -3,11 +3,16 @@ Shared test setup and fixtures
 """
 # Standard
 from pathlib import Path
+import abc
+import io
+import json
 import os
+import shutil
 import tempfile
 
 # Third Party
 import pytest
+import requests
 
 # First Party
 import alog
@@ -23,6 +28,17 @@ alog.configure(
 @pytest.fixture
 def data_dir():
     return Path(__file__).parent / "data"
+
+
+@pytest.fixture
+def mutable_data_dir(data_dir):
+    """Get a version of the data dir that the test can mutate without side
+    effects
+    """
+    with tempfile.TemporaryDirectory() as working_dir:
+        mutable_dir = Path(working_dir) / "data"
+        shutil.copytree(data_dir, mutable_dir)
+        yield mutable_dir
 
 
 @pytest.fixture
@@ -50,3 +66,42 @@ def ignore_user_config():
         os.environ["RAGNARDOC_HOME"] = temp_home
         yield
         _tempdir.cleanup()
+
+
+## Server Mock Structure #######################################################
+
+
+class ServerMockBase(abc.ABC):
+    """Shared base class for mock server implementations"""
+
+    ## Abstract ##
+
+    @abc.abstractmethod
+    def _handle_call(self, method: str, url: str, body: dict | None = None):
+        """Server-specific router method"""
+
+    ## Public ##
+
+    def get(self, url, *_, **__) -> requests.Response:
+        return self._handle_call("get", url)
+
+    def post(self, url, json=None, files=None, *_, **__) -> requests.Response:
+        if json and files:
+            raise ValueError("Cannot specify both `json` and `files`.")
+        body = json or files
+        return self._handle_call("post", url, body)
+
+    def delete(self, url, json=None, *_, **__) -> requests.Response:
+        return self._handle_call("delete", url, json)
+
+    ## Protected ##
+
+    @staticmethod
+    def _make_response(
+        resp_body: dict | str, status_code: int = 200
+    ) -> requests.Response:
+        resp = requests.Response()
+        resp.status_code = status_code
+        resp_str = resp_body if isinstance(resp_body, str) else json.dumps(resp_body)
+        resp.raw = io.BytesIO(resp_str.encode("utf-8"))
+        return resp
