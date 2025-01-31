@@ -152,7 +152,11 @@ class OpenWebUIMock(ServerMockBase):
             return self._make_error(404, "collection not found")
         if (file_value := self.files.get(file_id)) is None:
             return self._make_error(404, "file not found")
-        if file_id in collection_value["data"]["file_ids"]:
+        file_content = file_value["data"]["content"]
+        if file_id in collection_value["data"]["file_ids"] or any(
+            col_file["data"]["content"] == file_content
+            for col_file in collection_value["data"]["files"]
+        ):
             # NOTE: This error is handled specifically
             return self._make_error(
                 400,
@@ -295,3 +299,20 @@ def test_open_webui_ingest_delete(open_webui_mock, mutable_data_dir):
     collection = list(open_webui_mock.mock.collections.values())[0]
     assert doc_id not in collection["data"]["file_ids"]
     assert len(collection["data"]["files"]) == 1
+
+
+def test_open_webui_duplicate_content_ok(open_webui_mock, data_dir):
+    """Test that the 400 when re-adding a doc to a collection is handled as ok
+
+    https://github.com/DS4SD/ragnardoc/issues/4
+    """
+    docs = [Document.from_file(data_dir / "sample.txt", data_dir)]
+    open_webui_mock.ingest(docs)
+
+    # Clear the storage to simulate the db being killed
+    assert len(open_webui_mock._storage._data) == 1
+    open_webui_mock._storage._data.clear()
+
+    # Re-do ingestion and make sure the doc is marked as "done"
+    open_webui_mock.ingest(docs)
+    assert len(open_webui_mock._storage._data) == 1
