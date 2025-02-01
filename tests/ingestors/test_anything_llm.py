@@ -18,15 +18,15 @@ import requests
 import aconfig
 
 # Local
-from ragnardoc.ingestors import ingestor_factory
 from ragnardoc.ingestors.anything_llm import AnythingLLMIngestor
 from ragnardoc.storage import storage_factory
 from ragnardoc.types import Document
+from tests.conftest import ServerMockBase
 
 ## Helpers #####################################################################
 
 
-class AnythingLLMMock:
+class AnythingLLMMock(ServerMockBase):
     """Mock implementation of AnythingLLM that stores docs in memory"""
 
     def __init__(self, base_url: str, workspaces: list[str]):
@@ -40,15 +40,6 @@ class AnythingLLMMock:
             }
             for ws in workspaces
         }
-
-    def get(self, url, *_, **__) -> requests.Response:
-        return self._handle_call("get", url)
-
-    def post(self, url, json, *_, **__) -> requests.Response:
-        return self._handle_call("post", url, json)
-
-    def delete(self, url, json, *_, **__) -> requests.Response:
-        return self._handle_call("delete", url, json)
 
     def _handle_call(self, method: str, url: str, body: dict | None = None):
         """Handle an API call"""
@@ -74,16 +65,6 @@ class AnythingLLMMock:
             if url == f"{self.base_url}/api/v1/system/remove-documents":
                 return self._delete_documents(body)
         return self._make_error(404, "Not found")
-
-    @staticmethod
-    def _make_response(
-        resp_body: dict | str, status_code: int = 200
-    ) -> requests.Response:
-        resp = requests.Response()
-        resp.status_code = status_code
-        resp_str = resp_body if isinstance(resp_body, str) else json.dumps(resp_body)
-        resp.raw = io.BytesIO(resp_str.encode("utf-8"))
-        return resp
 
     @classmethod
     def _make_error(cls, status_code: int, msg: str = "") -> requests.Response:

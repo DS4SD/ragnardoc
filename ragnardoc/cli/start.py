@@ -58,7 +58,7 @@ class StartCommand(CommandBase):
         """Run the ingestion as a subprocess. This is done so that config
         changes are re-parsed on very run.
         """
-        with alog.ContextTimer(log.debug, "Ingestion done in: %s"):
+        with alog.ContextTimer(log.debug, "Ingestion done in: "):
             subprocess.run(shlex.split(self._cmd))
 
     @staticmethod

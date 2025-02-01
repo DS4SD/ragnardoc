@@ -19,7 +19,7 @@ if [[ "${pytest_opts[*]}" != *"tests/"* ]]; then
         --cov=ragnardoc
         --cov-report=term
         --cov-report=html
-        --cov-fail-under=56
+        --cov-fail-under=63
     )
 fi
 
